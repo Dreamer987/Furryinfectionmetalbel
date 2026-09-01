@@ -830,3 +830,20 @@ Tab2:AddToggle({
 })
 
 OrionLib:Init()
+local enabled = false
+
+Tab:AddToggle({
+    Name = "cosplay Rewake game :)",
+    Default = false,
+    Callback = function(Value)
+        enabled = Value
+
+        if Value then
+            loadstring(game:HttpGet(
+                "https://raw.githubusercontent.com/Dreamer987/Furewake/refs/heads/main/Rewakefurry"
+            ))()
+        end
+    end
+})
+
+OrionLib:Init()
