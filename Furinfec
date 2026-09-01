@@ -19,6 +19,11 @@ local Tab2 = Window:MakeTab({
 	Icon = "rbxassetid://4483345998",
 	PremiumOnly = false
 })
+local Tab3 = Window:MakeTab({
+	Name = "Update ui",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
+})
 -- ================== HIT INSTINCT (Chỉ spam Tool đang cầm) ==================
 local HitInstinctEnabled = false
 local HitConnection = nil
@@ -94,7 +99,7 @@ end
 
 -- ================== NÚT TOGGLE ==================
 Tab:AddToggle({
-    Name = "Hit Instinct enemy",
+    Name = "Auto Swing player",
     Default = false,
     Callback = function(Value)
         if Value then
@@ -832,7 +837,7 @@ Tab2:AddToggle({
 OrionLib:Init()
 local enabled = false
 
-Tab:AddToggle({
+Tab3:AddToggle({
     Name = "cosplay Rewake game :)",
     Default = false,
     Callback = function(Value)
@@ -847,3 +852,19 @@ Tab:AddToggle({
 })
 
 OrionLib:Init()
+Tab3:AddButton({
+    Name = "Stats Weapon premium💎",
+    Callback = function()
+        loadstring(game:HttpGet(
+            "https://raw.githubusercontent.com/Dreamer987/Sigmauh/refs/heads/main/PickItem_Status_23Studs.lua"
+        ))()
+    end
+})
+Tab3:AddButton({
+    Name = "Stats Player",
+    Callback = function()
+        loadstring(game:HttpGet(
+            "https://raw.githubusercontent.com/Dreamer987/Kuma/refs/heads/main/Player_Items_Inspector_V3.lua"
+        ))()
+    end
+})
