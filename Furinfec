@@ -964,3 +964,154 @@ Tab:AddToggle({
         end
     end
 })
+local HitInstinctEnabled = false
+local HitConnection = nil
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+
+local LastHealth = nil
+local LastDamageTime = 0
+local SmallDamageStreak = false
+
+-- Thời gian tối đa giữa 2 lần mất máu để vẫn tính là "liên tục"
+local CONTINUOUS_TIME = 0.25
+
+local function EnableHitInstinct()
+    HitInstinctEnabled = true
+
+    LastHealth = nil
+    LastDamageTime = 0
+    SmallDamageStreak = false
+
+    HitConnection = RunService.Heartbeat:Connect(function()
+        if not HitInstinctEnabled then return end
+
+        local char = LocalPlayer.Character
+        if not char then return end
+
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if not humanoid or humanoid.Health <= 0 then return end
+
+        local now = tick()
+        local currentHealth = humanoid.Health
+
+        -- ================= DAMAGE CHECK =================
+        if LastHealth ~= nil then
+            local damage = LastHealth - currentHealth
+
+            if damage > 0 then
+                -- Có mất máu
+                LastDamageTime = now
+
+                if damage < 10 then
+                    -- Mất dưới 10 HP
+                    -- KHÔNG SWING
+                    SmallDamageStreak = true
+
+                elseif damage > 10 then
+                    -- Một lần mất trên 10 HP
+                    -- Cho swing lại
+                    SmallDamageStreak = false
+                end
+            end
+
+            -- Nếu đã ngừng mất máu đủ lâu -> reset chuỗi
+            if SmallDamageStreak
+                and (now - LastDamageTime) > CONTINUOUS_TIME then
+
+                SmallDamageStreak = false
+            end
+        end
+
+        LastHealth = currentHealth
+
+        -- ================= TOOL =================
+        local tool = char:FindFirstChildOfClass("Tool")
+        if not tool then return end
+
+        -- Đang bị mất máu nhỏ liên tục -> KHÔNG SWING
+        if SmallDamageStreak then
+            return
+        end
+
+        local myRoot = char:FindFirstChild("HumanoidRootPart")
+        if not myRoot then return end
+
+        local myTeam = LocalPlayer.Team
+        local shouldHit = false
+
+        -- ================= CHECK ENEMY =================
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr.Character then
+
+                local theirRoot =
+                    plr.Character:FindFirstChild("HumanoidRootPart")
+
+                local theirHumanoid =
+                    plr.Character:FindFirstChildOfClass("Humanoid")
+
+                if theirRoot and theirHumanoid
+                    and theirHumanoid.Health > 0 then
+
+                    local distance =
+                        (myRoot.Position - theirRoot.Position).Magnitude
+
+                    local sameTeam =
+                        (myTeam and plr.Team == myTeam)
+
+                    if distance < 10 and not sameTeam then
+                        shouldHit = true
+                        break
+                    end
+                end
+            end
+        end
+
+        -- ================= SWING =================
+        if shouldHit and not SmallDamageStreak then
+            tool:Activate()
+        end
+    end)
+
+    OrionLib:MakeNotification({
+        Name = "Hit Instinct",
+        Content = "Bật! Damage <10 liên tục sẽ khóa swing.",
+        Image = "rbxassetid://4483345998",
+        Time = 4
+    })
+end
+
+local function DisableHitInstinct()
+    HitInstinctEnabled = false
+
+    if HitConnection then
+        HitConnection:Disconnect()
+        HitConnection = nil
+    end
+
+    LastHealth = nil
+    LastDamageTime = 0
+    SmallDamageStreak = false
+
+    OrionLib:MakeNotification({
+        Name = "Hit Instinct",
+        Content = "Đã tắt Hit Instinct.",
+        Image = "rbxassetid://4483345998",
+        Time = 3
+    })
+end
+
+Tab:AddToggle({
+    Name = "Hit Instinct enemy v2",
+    Default = false,
+
+    Callback = function(Value)
+        if Value then
+            EnableHitInstinct()
+        else
+            DisableHitInstinct()
+        end
+    end
+})
