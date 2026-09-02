@@ -868,3 +868,99 @@ Tab3:AddButton({
         ))()
     end
 })
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local LocalPlayer = Players.LocalPlayer
+
+local MeleeRemote = ReplicatedStorage
+    :WaitForChild("SovaSystemMeleeR")
+    :WaitForChild("Remotes")
+
+local RequestAttack = MeleeRemote:WaitForChild("RequestAttack")
+local OnHit = MeleeRemote:WaitForChild("OnHit")
+
+local RANGE = 12
+local INTERVAL = 0.15
+
+local AttackInvisible = false
+local AttackThread = nil
+
+local function StartAttackInvisible()
+    if AttackThread then return end
+
+    AttackThread = task.spawn(function()
+        while AttackInvisible do
+            local Character = LocalPlayer.Character
+            local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+
+            if Root then
+                for _, Player in ipairs(Players:GetPlayers()) do
+                    if not AttackInvisible then
+                        break
+                    end
+
+                    if Player ~= LocalPlayer
+                    and Player.Team ~= LocalPlayer.Team then
+
+                        local TargetCharacter = Player.Character
+                        local TargetHumanoid =
+                            TargetCharacter and
+                            TargetCharacter:FindFirstChildOfClass("Humanoid")
+
+                        local TargetPart =
+                            TargetCharacter and
+                            (
+                                TargetCharacter:FindFirstChild("Torso")
+                                or TargetCharacter:FindFirstChild("UpperTorso")
+                                or TargetCharacter:FindFirstChild("HumanoidRootPart")
+                            )
+
+                        if TargetHumanoid
+                        and TargetPart
+                        and TargetHumanoid.Health > 0 then
+
+                            local Distance =
+                                (Root.Position - TargetPart.Position).Magnitude
+
+                            if Distance <= RANGE then
+                                pcall(function()
+                                    RequestAttack:InvokeServer(1)
+
+                                    OnHit:FireServer(
+                                        TargetPart,
+                                        TargetHumanoid
+                                    )
+                                end)
+                            end
+                        end
+                    end
+                end
+            end
+
+            task.wait(INTERVAL)
+        end
+
+        AttackThread = nil
+    end)
+end
+
+local function StopAttackInvisible()
+    AttackInvisible = false
+    AttackThread = nil
+end
+
+
+Tab:AddToggle({
+    Name = "Attack Invisible 💎",
+    Default = false,
+    Callback = function(Value)
+        AttackInvisible = Value
+
+        if Value then
+            StartAttackInvisible()
+        else
+            StopAttackInvisible()
+        end
+    end
+})
