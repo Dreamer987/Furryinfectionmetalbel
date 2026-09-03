@@ -1115,3 +1115,37 @@ Tab:AddToggle({
         end
     end
 })
+Tab2:AddToggle({
+    Name = "Bypass anti speed fur Storm 💎",
+    Default = false,
+    Callback = function(Value)
+        _G.BypassStormSpeed = Value
+
+        if Value then
+            task.spawn(function()
+                while _G.BypassStormSpeed do
+                    pcall(function()
+                        local Player = game:GetService("Players").LocalPlayer
+                        local RunSystem = Player.PlayerGui:FindFirstChild("RunSystem")
+                        local Run = RunSystem and RunSystem:FindFirstChild("Run")
+
+                        if Run then
+                            local Runspeed = Run:FindFirstChild("Runspeed")
+                            local Walkspeed = Run:FindFirstChild("Walkspeed")
+
+                            if Runspeed then
+                                Runspeed.Value = 32
+                            end
+
+                            if Walkspeed then
+                                Walkspeed.Value = 32
+                            end
+                        end
+                    end)
+
+                    task.wait(0.05)
+                end
+            end)
+        end
+    end
+})
