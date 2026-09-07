@@ -24,6 +24,73 @@ local Tab3 = Window:MakeTab({
 	Icon = "rbxassetid://4483345998",
 	PremiumOnly = false
 })
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+
+local LookingEnabled = false
+local Distance = 15
+
+
+
+Tab:AddToggle({
+    Name = "Look At Enemy 👀",
+    Default = false,
+    Callback = function(Value)
+        LookingEnabled = Value
+    end
+})
+
+--// Body Look
+RunService.RenderStepped:Connect(function()
+    if not LookingEnabled then
+        return
+    end
+
+    local Character = LocalPlayer.Character
+    local MyRoot = Character and Character:FindFirstChild("HumanoidRootPart")
+
+    if not MyRoot then
+        return
+    end
+
+    local Target = nil
+    local NearestDistance = Distance
+
+    for _, Player in ipairs(Players:GetPlayers()) do
+        if Player ~= LocalPlayer
+            and Player.Team ~= LocalPlayer.Team then
+
+            local TargetCharacter = Player.Character
+            local TargetRoot = TargetCharacter
+                and TargetCharacter:FindFirstChild("HumanoidRootPart")
+
+            if TargetRoot then
+                local DistanceFromMe =
+                    (TargetRoot.Position - MyRoot.Position).Magnitude
+
+                if DistanceFromMe <= NearestDistance then
+                    NearestDistance = DistanceFromMe
+                    Target = TargetRoot
+                end
+            end
+        end
+    end
+
+    if Target then
+        local LookPosition = Vector3.new(
+            Target.Position.X,
+            MyRoot.Position.Y,
+            Target.Position.Z
+        )
+
+        MyRoot.CFrame = CFrame.lookAt(
+            MyRoot.Position,
+            LookPosition
+        )
+    end
+end)
 -- ================== HIT INSTINCT (Chỉ spam Tool đang cầm) ==================
 local HitInstinctEnabled = false
 local HitConnection = nil
