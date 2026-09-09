@@ -20,7 +20,7 @@ local Tab2 = Window:MakeTab({
 	PremiumOnly = false
 })
 local Tab3 = Window:MakeTab({
-	Name = "Update ui",
+	Name = "Item",
 	Icon = "rbxassetid://4483345998",
 	PremiumOnly = false
 })
@@ -1314,3 +1314,358 @@ Tab2:AddToggle({
         end
     end
 })
+
+
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local Character
+local Humanoid
+local HRP
+local Backpack
+
+local selectedItem = nil
+local isRunning = false
+
+local function UpdateCharacter()
+    Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    Humanoid = Character:WaitForChild("Humanoid")
+    HRP = Character:WaitForChild("HumanoidRootPart")
+    Backpack = LocalPlayer:WaitForChild("Backpack")
+end
+
+UpdateCharacter()
+
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    UpdateCharacter()
+end)
+
+--------------------------------------------------
+-- LẤY ITEM
+--------------------------------------------------
+
+local function getAvailableItems()
+    local items = {}
+
+    local pickFolder = workspace:FindFirstChild("PickItem")
+    if not pickFolder then
+        return items
+    end
+
+    for _, item in ipairs(pickFolder:GetChildren()) do
+        if not Backpack:FindFirstChild(item.Name)
+        and not Character:FindFirstChild(item.Name) then
+
+            table.insert(items, item.Name)
+        end
+    end
+
+    table.sort(items)
+
+    return items
+end
+
+--------------------------------------------------
+-- LẤY CFRAME ITEM
+--------------------------------------------------
+
+local function GetItemCFrame(item)
+    if not item then
+        return nil
+    end
+
+    if item:IsA("BasePart") then
+        return item.CFrame
+    end
+
+    if item:IsA("Model") then
+        if item.PrimaryPart then
+            return item.PrimaryPart.CFrame
+        end
+
+        local root = item:FindFirstChild("HumanoidRootPart")
+        if root and root:IsA("BasePart") then
+            return root.CFrame
+        end
+
+        return item:GetPivot()
+    end
+
+    local part = item:FindFirstChildWhichIsA("BasePart", true)
+
+    if part then
+        return part.CFrame
+    end
+
+    return nil
+end
+
+--------------------------------------------------
+-- DROPDOWN
+--------------------------------------------------
+
+local Dropdown = Tab3:AddDropdown({
+    Name = "pick Item",
+    Default = "None",
+    Options = getAvailableItems(),
+
+    Callback = function(Value)
+        selectedItem = Value
+    end
+})
+
+--------------------------------------------------
+-- REFRESH
+--------------------------------------------------
+
+Tab3:AddButton({
+    Name = "Refresh Items",
+
+    Callback = function()
+        local items = getAvailableItems()
+
+        Dropdown:Refresh(items, true)
+
+        OrionLib:MakeNotification({
+            Name = "Refresh",
+            Content = "Đã cập nhật " .. #items .. " item",
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
+    end
+})
+
+--------------------------------------------------
+-- PROXY
+--------------------------------------------------
+
+local function ActivateProxy()
+    pcall(function()
+
+        ------------------------------------------------
+        -- ĐẶT REMOTE PROXY CỦA GAME Ở ĐÂY
+        --
+        -- Ví dụ:
+        -- game:GetService("ReplicatedStorage")
+        --     .Remotes.Proxy:FireServer(100)
+        --
+        -- Code hiện tại KHÔNG tự đoán remote.
+        ------------------------------------------------
+
+    end)
+end
+
+--------------------------------------------------
+-- MAIN TOGGLE
+--------------------------------------------------
+
+Tab3:AddToggle({
+    Name = "Get ",
+    Default = false,
+
+    Callback = function(Value)
+
+        isRunning = Value
+
+        ------------------------------------------------
+        -- OFF
+        ------------------------------------------------
+
+        if not Value then
+
+            pcall(function()
+                if Humanoid then
+                    Humanoid:UnequipTools()
+                end
+            end)
+
+            OrionLib:MakeNotification({
+                Name = "OFF",
+                Content = "Đã dừng PickItem Auto",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+
+            return
+        end
+
+        ------------------------------------------------
+        -- KIỂM TRA ITEM
+        ------------------------------------------------
+
+        if not selectedItem or selectedItem == "None" then
+
+            isRunning = false
+
+            OrionLib:MakeNotification({
+                Name = "Lỗi",
+                Content = "Hãy chọn Item trước!",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+
+            return
+        end
+
+        if Backpack:FindFirstChild(selectedItem)
+        or Character:FindFirstChild(selectedItem) then
+
+            isRunning = false
+
+            OrionLib:MakeNotification({
+                Name = "Bỏ qua",
+                Content = "Item đã có trong Backpack/Character",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+
+            return
+        end
+
+        ------------------------------------------------
+        -- LOCK TẠI ITEM
+        ------------------------------------------------
+
+        task.spawn(function()
+
+            while isRunning do
+
+                pcall(function()
+
+                    local pickFolder = workspace:FindFirstChild("PickItem")
+
+                    if not pickFolder then
+                        return
+                    end
+
+                    local target = pickFolder:FindFirstChild(selectedItem)
+
+                    if not target then
+                        return
+                    end
+
+                    local itemCF = GetItemCFrame(target)
+
+                    if itemCF and HRP then
+
+                        -- Lock tại item
+                        HRP.CFrame =
+                            itemCF + Vector3.new(0, 3, 0)
+
+                    end
+
+                end)
+
+                task.wait()
+            end
+
+        end)
+
+        ------------------------------------------------
+        -- EQUIP / UNEQUIP 0.41s
+        ------------------------------------------------
+
+        task.spawn(function()
+
+            while isRunning do
+
+                pcall(function()
+
+                    if not Character
+                    or not Humanoid
+                    or not Backpack then
+                        UpdateCharacter()
+                    end
+
+                    local tool =
+                        Backpack:FindFirstChild(selectedItem)
+                        or Character:FindFirstChild(selectedItem)
+
+                    if tool and tool:IsA("Tool") then
+
+                        -- Equip
+                        Humanoid:EquipTool(tool)
+
+                        task.wait(2.41)
+
+                        if not isRunning then
+                            return
+                        end
+
+                        -- Unequip
+                        Humanoid:UnequipTools()
+
+                    end
+
+                end)
+
+                task.wait(0.01)
+
+            end
+
+        end)
+
+        ------------------------------------------------
+        -- PROXY LIÊN TỤC
+        ------------------------------------------------
+
+        task.spawn(function()
+
+            while isRunning do
+
+                ActivateProxy()
+
+                -- Proxy chạy liên tục
+                task.wait(0.01)
+
+            end
+
+        end)
+
+        OrionLib:MakeNotification({
+            Name = "ON",
+            Content = "Lock Item + Equip/Unequip + Proxy đang chạy",
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
+
+    end
+})
+
+OrionLib:Init()
+local RANGE = 100
+local Enabled = false
+
+Tab3:AddToggle({
+    Name = "Auto pick aura",
+    Default = false,
+    Callback = function(Value)
+        Enabled = Value
+
+        if Enabled then
+            task.spawn(function()
+                while Enabled do
+                    for _, obj in ipairs(workspace:GetDescendants()) do
+                        if not Enabled then
+                            break
+                        end
+
+                        if obj:IsA("ProximityPrompt") then
+                            obj.MaxActivationDistance = RANGE
+
+                            if obj.Enabled then
+                                fireproximityprompt(obj)
+                            end
+                        end
+                    end
+
+                    task.wait(0.4)
+                end
+            end)
+        end
+    end
+})
+
+OrionLib:Init()
