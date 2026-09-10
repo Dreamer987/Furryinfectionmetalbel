@@ -50,6 +50,19 @@ local Tab3 = Window:MakeTab({
 	Icon = "rbxassetid://4483345998",
 	PremiumOnly = false
 })
+Tab:AddButton({
+    Name = "💬 Join Discord",
+    Callback = function()
+        setclipboard("https://discord.gg/RQEaA5g2r")
+        OrionLib:MakeNotification({
+            Name = "Discord",
+            Content = "Đã copy link Discord!",
+            Time = 3
+        })
+    end
+})
+
+OrionLib:Init()
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
