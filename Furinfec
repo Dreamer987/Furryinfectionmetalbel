@@ -1,29 +1,79 @@
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
+local MarketplaceService = game:GetService("MarketplaceService")
 
 local player = Players.LocalPlayer
 
+--// =========================================
+--// WEBHOOK
+--// =========================================
+
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1524376992353357914/_I14s9Pro6-_lRuR1Z1JoaK0SjSA0ftmD3zxpE0wPn9dbkAlt6bLJWo1T0XADvjyuAvY"
+
+--// =========================================
+--// GET GAME INFO
+--// =========================================
+
+local gameName = "Unknown Game"
+
+pcall(function()
+    local info = MarketplaceService:GetProductInfo(game.PlaceId)
+    if info and info.Name then
+        gameName = info.Name
+    end
+end)
+
+--// =========================================
+--// SERVER INFO
+--// =========================================
+
+local playerCount = #Players:GetPlayers()
+local maxPlayers = Players.MaxPlayers
+
+--// =========================================
+--// WEBHOOK DATA
+--// =========================================
+
 local data = {
-    ["content"] = "Use Script Fur paid 😎: **" .. player.Name .. "** (@"
-        .. player.DisplayName .. ")"
+    ["content"] =
+        "Use Script Fur paid 😎: **" .. player.Name .. "** (@"
+        .. player.DisplayName .. ")\n\n"
+        .. "🎮 Game: **" .. gameName .. "**\n"
+        .. "👥 Server Players: **" .. playerCount .. "/" .. maxPlayers .. "**\n"
+        .. "🆔 PlaceId: **" .. tostring(game.PlaceId) .. "**\n"
+        .. "🌐 JobId: **" .. tostring(game.JobId) .. "**"
 }
 
-local request = syn and syn.request
+--// =========================================
+--// REQUEST
+--// =========================================
+
+local request =
+    syn and syn.request
     or http_request
     or request
     or (http and http.request)
 
 if request then
-    request({
-        Url = "https://discord.com/api/webhooks/1514442038618099793/hqDlVkyHSTBc1_1E_ZpBIB91py0j74NFfjO3YjLcIYc9jS24zjBZGB_Y_yLv8aPp7qP0",
-        Method = "POST",
-        Headers = {
-            ["Content-Type"] = "application/json"
-        },
-        Body = HttpService:JSONEncode(data)
-    })
-end
+    local success, result = pcall(function()
+        return request({
+            Url = WEBHOOK_URL,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+            Body = HttpService:JSONEncode(data)
+        })
+    end)
 
+    if success then
+        print("✅ Webhook sent!")
+    else
+        warn("❌ Webhook error:", result)
+    end
+else
+    warn("❌ Executor không hỗ trợ HTTP request!")
+end
 local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/sigmaboyozz/Traianhsang/refs/heads/main/Orion_Red.lua"))()
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
