@@ -1820,7 +1820,7 @@ end
 
 Tab4:AddToggle({
     Name = "range all player",
-    Default = true,
+    Default = false,
     Callback = function(v)
         Enabled = v
     end
@@ -1852,13 +1852,13 @@ local function SetSpeed()
     local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
 
     if Humanoid then
-        Humanoid.WalkSpeed = Enabled and 31.1 or 16
+        Humanoid.WalkSpeed = Enabled and 29.4 or 16
     end
 end
 
 Tab4:AddToggle({
     Name = "Speed hack",
-    Default = true,
+    Default = false,
     Callback = function(Value)
         Enabled = Value
         SetSpeed()
