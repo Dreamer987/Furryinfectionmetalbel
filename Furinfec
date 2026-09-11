@@ -101,11 +101,7 @@ local Tab3 = Window:MakeTab({
 	Icon = "rbxassetid://4483345998",
 	PremiumOnly = false
 })
-local Tab4 = Window:MakeTab({
-	Name = "😎v2?",
-	Icon = "rbxassetid://4483345998",
-	PremiumOnly = false
-})
+
 Tab:AddButton({
     Name = "💬 Join Discord",
     Callback = function()
@@ -978,7 +974,7 @@ local Loaded = false
 
 Tab2:AddToggle({
     Name = "Settings Hack",
-    Default = false,
+    Default = true,
     Callback = function(Value)
         Enabled = Value
 
