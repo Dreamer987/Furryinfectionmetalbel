@@ -713,7 +713,7 @@ end
 
 Tab2:AddToggle({
 	Name = "Dash Skill",
-	Default = false,
+	Default = true,
 	Callback = function(v)
 		if v then
 			CreateDashButton()
@@ -972,7 +972,7 @@ local Loaded = false
 
 Tab2:AddToggle({
     Name = "Settings Hack",
-    Default = false,
+    Default = true,
     Callback = function(Value)
         Enabled = Value
 
