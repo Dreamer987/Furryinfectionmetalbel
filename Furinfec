@@ -95,8 +95,14 @@ local Tab2 = Window:MakeTab({
 	Icon = "rbxassetid://4483345998",
 	PremiumOnly = false
 })
+
 local Tab3 = Window:MakeTab({
 	Name = "Item",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
+})
+local Tab4 = Window:MakeTab({
+	Name = "😎v2?",
 	Icon = "rbxassetid://4483345998",
 	PremiumOnly = false
 })
@@ -618,10 +624,10 @@ local LP = Players.LocalPlayer
 local DashButton
 local DashCooldown = false
 
-local DashSpeed = 70
+local DashSpeed = 71
 local DashTime = 0.4
-local CooldownTime = 5
-local HeightOffset = -1.5
+local CooldownTime = 3.5
+local HeightOffset = -1
 
 local function CreateDashButton()
 	if DashButton then
@@ -900,7 +906,7 @@ end)
 -- =========================
 
 Tab:AddToggle({
-    Name = "Sigma toilet",
+    Name = "behind player",
     Default = true,
     Callback = function(Value)
         ScreenGui.Enabled = Value
@@ -972,7 +978,7 @@ local Loaded = false
 
 Tab2:AddToggle({
     Name = "Settings Hack",
-    Default = true,
+    Default = false,
     Callback = function(Value)
         Enabled = Value
 
@@ -1790,3 +1796,108 @@ Corner2.Parent = Image
 Toggle.MouseButton1Click:Connect(function()
   OrionLib:ToggleUi()
 end)
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+
+
+local Enabled = true
+
+local function applyHitbox(player)
+    if player == LocalPlayer then return end
+
+    local char = player.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+
+    if root then
+        root.Size = Vector3.new(22, 22, 22)
+        root.Transparency = 0.91
+        root.CanCollide = false
+    end
+end
+
+local function updateAll()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if Enabled then
+            applyHitbox(player)
+        end
+    end
+end
+
+Tab4:AddToggle({
+    Name = "Range all player",
+    Default = true,
+    Callback = function(Value)
+        Enabled = Value
+
+        if Value then
+            updateAll()
+        else
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer and player.Character then
+                    local root = player.Character:FindFirstChild("HumanoidRootPart")
+                    if root then
+                        root.Size = Vector3.new(2, 2, 1)
+                        root.Transparency = 1
+                    end
+                end
+            end
+        end
+    end
+})
+
+for _, player in ipairs(Players:GetPlayers()) do
+    player.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        if Enabled then
+            applyHitbox(player)
+        end
+    end)
+end
+
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        if Enabled then
+            applyHitbox(player)
+        end
+    end)
+end)
+
+updateAll()
+OrionLib:Init()
+
+
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+
+
+
+local Enabled = true
+
+local function SetSpeed()
+    local Character = Player.Character
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+
+    if Humanoid then
+        Humanoid.WalkSpeed = Enabled and 31.1 or 16
+    end
+end
+
+Tab4:AddToggle({
+    Name = "Speed hack",
+    Default = true,
+    Callback = function(Value)
+        Enabled = Value
+        SetSpeed()
+    end
+})
+
+Player.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    SetSpeed()
+end)
+
+SetSpeed()
+OrionLib:Init()
