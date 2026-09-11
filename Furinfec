@@ -1797,75 +1797,46 @@ Toggle.MouseButton1Click:Connect(function()
   OrionLib:ToggleUi()
 end)
 
+
+
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
-
-
+local LP = Players.LocalPlayer
 local Enabled = true
 
-local function applyHitbox(player)
-    if player == LocalPlayer then return end
+
+
+local function Apply(player)
+    if player == LP then return end
 
     local char = player.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
 
     if root then
         root.Size = Vector3.new(22, 22, 22)
-        root.Transparency = 0.91
+        root.Transparency = 0.8
         root.CanCollide = false
     end
 end
 
-local function updateAll()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if Enabled then
-            applyHitbox(player)
-        end
-    end
-end
-
 Tab4:AddToggle({
-    Name = "Range all player",
+    Name = "range all player",
     Default = true,
-    Callback = function(Value)
-        Enabled = Value
-
-        if Value then
-            updateAll()
-        else
-            for _, player in ipairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer and player.Character then
-                    local root = player.Character:FindFirstChild("HumanoidRootPart")
-                    if root then
-                        root.Size = Vector3.new(2, 2, 1)
-                        root.Transparency = 1
-                    end
-                end
-            end
-        end
+    Callback = function(v)
+        Enabled = v
     end
 })
 
-for _, player in ipairs(Players:GetPlayers()) do
-    player.CharacterAdded:Connect(function()
-        task.wait(0.5)
+task.spawn(function()
+    while task.wait(0.1) do
         if Enabled then
-            applyHitbox(player)
+            for _, player in ipairs(Players:GetPlayers()) do
+                Apply(player)
+            end
         end
-    end)
-end
-
-Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function()
-        task.wait(0.5)
-        if Enabled then
-            applyHitbox(player)
-        end
-    end)
+    end
 end)
 
-updateAll()
+OrionLib:Init()
 OrionLib:Init()
 
 
