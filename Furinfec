@@ -1764,5 +1764,507 @@ Tab3:AddToggle({
 })
 
 OrionLib:Init()
-                    
+--// KATANA ELECTRIC DASH + CRUCIBLE CYAN EFFECT
+--// ORIONLIB TOGGLE - DEFAULT ON
+--// Delta / Client Side
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+local LP = Players.LocalPlayer
+local PlayerGui = LP:WaitForChild("PlayerGui")
+
+--==================================================
+-- ORION LIB
+--==================================================
+
+
+
+local Enabled = false
+
+--==================================================
+-- VARIABLES
+--==================================================
+
+local Camera
+local OriginalCameraType
+local OriginalCameraSubject
+local OriginalCFrame
+
+local CinematicRunning = false
+local CurrentGui
+
+local PickItem
+local CrucibleBlade
+local Katana
+local KatanaBlade
+
+local CYAN = Color3.fromRGB(0, 220, 255)
+local CYAN2 = Color3.fromRGB(80, 255, 255)
+
+--==================================================
+-- CLEANUP
+--==================================================
+
+local function Cleanup()
+
+    CinematicRunning = false
+
+    -- Xóa GUI
+    local gui = PlayerGui:FindFirstChild("KatanaSigmaIntro")
+    if gui then
+        gui:Destroy()
+    end
+
+    CurrentGui = nil
+
+    -- Xóa effect đã clone
+    if KatanaBlade then
+        for _, obj in ipairs(KatanaBlade:GetChildren()) do
+            if obj.Name == "Lightning_Blue"
+            or obj.Name == "Effect9_Blue" then
+                obj:Destroy()
+            end
+        end
+    end
+
+    -- Trả camera
+    Camera = workspace.CurrentCamera
+
+    if Camera and OriginalCFrame then
+        pcall(function()
+            Camera.CFrame = OriginalCFrame
+            Camera.CameraType = OriginalCameraType
+            Camera.CameraSubject = OriginalCameraSubject
+        end)
+    end
+
+    OriginalCameraType = nil
+    OriginalCameraSubject = nil
+    OriginalCFrame = nil
+end
+
+--==================================================
+-- COLOR EFFECT
+--==================================================
+
+local function ColorEffect(obj)
+
+    if obj:IsA("BasePart") then
+        obj.Color = CYAN
+        obj.Material = Enum.Material.Neon
+    end
+
+    if obj:IsA("ParticleEmitter") then
+        obj.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, CYAN2),
+            ColorSequenceKeypoint.new(0.5, CYAN),
+            ColorSequenceKeypoint.new(1, CYAN2)
+        })
+    end
+
+    if obj:IsA("Beam") then
+        obj.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, CYAN2),
+            ColorSequenceKeypoint.new(0.5, CYAN),
+            ColorSequenceKeypoint.new(1, CYAN2)
+        })
+    end
+
+    if obj:IsA("Trail") then
+        obj.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, CYAN2),
+            ColorSequenceKeypoint.new(0.5, CYAN),
+            ColorSequenceKeypoint.new(1, CYAN2)
+        })
+    end
+
+    if obj:IsA("PointLight")
+    or obj:IsA("SpotLight")
+    or obj:IsA("SurfaceLight") then
+        obj.Color = CYAN
+    end
+
+    if obj:IsA("Highlight") then
+        obj.FillColor = CYAN
+        obj.OutlineColor = CYAN2
+    end
+
+    for _, child in ipairs(obj:GetChildren()) do
+        ColorEffect(child)
+    end
+end
+
+--==================================================
+-- CLONE EFFECT
+--==================================================
+
+local function CloneEffect(effect, name)
+
+    if not effect then
+        warn("Không tìm thấy:", name)
+        return
+    end
+
+    local clone = effect:Clone()
+
+    clone.Name = name .. "_Blue"
+    clone.Parent = KatanaBlade
+
+    ColorEffect(clone)
+
+    return clone
+end
+
+--==================================================
+-- LOAD ELECTRIC DASH
+--==================================================
+
+local function LoadElectricDash()
+
+    local success, err = pcall(function()
+
+        loadstring(game:HttpGet(
+            "https://raw.githubusercontent.com/Dreamer987/Kukuakka/refs/heads/main/Katana_Electric_Dash_Delta.lua"
+        ))()
+
+    end)
+
+    if not success then
+        warn("Electric Dash load lỗi:", err)
+    end
+end
+
+--==================================================
+-- MAIN FUNCTION
+--==================================================
+
+local function StartKatana()
+
+    if not Enabled then
+        return
+    end
+
+    Cleanup()
+
+    Camera = workspace.CurrentCamera
+
+    --==================================================
+    -- SERVICES / ITEMS
+    --==================================================
+
+    PickItem = workspace:WaitForChild("PickItem")
+
+    CrucibleBlade = PickItem
+        :WaitForChild("Crucible")
+        :WaitForChild("Crucible")
+        :WaitForChild("WeldParts")
+        :WaitForChild("Blade")
+
+    Katana = PickItem:WaitForChild("Katana")
+
+    --==================================================
+    -- FIND KATANA BLADE
+    --==================================================
+
+    KatanaBlade =
+        Katana:FindFirstChild("Blade", true)
+        or Katana:FindFirstChildWhichIsA("BasePart", true)
+        or (Katana:IsA("BasePart") and Katana)
+
+    if not KatanaBlade then
+        warn("Không tìm thấy Blade/BasePart trong Katana!")
+        return
+    end
+
+    --==================================================
+    -- REMOVE OLD EFFECTS
+    --==================================================
+
+    for _, obj in ipairs(KatanaBlade:GetChildren()) do
+        if obj.Name == "Lightning_Blue"
+        or obj.Name == "Effect9_Blue" then
+            obj:Destroy()
+        end
+    end
+
+    --==================================================
+    -- LIGHTNING
+    --==================================================
+
+    local Lightning = CrucibleBlade:FindFirstChild("Lightning")
+
+    CloneEffect(
+        Lightning,
+        "Lightning"
+    )
+
+    --==================================================
+    -- CHILDREN()[9]
+    --==================================================
+
+    local Children = CrucibleBlade:GetChildren()
+    local Effect9 = Children[9]
+
+    if Effect9 then
+
+        CloneEffect(
+            Effect9,
+            "Effect9"
+        )
+
+    else
+        warn("Crucible Blade không có Children()[9]")
+    end
+
+    --==================================================
+    -- CINEMATIC GUI
+    --==================================================
+
+    local OldGui = PlayerGui:FindFirstChild("KatanaSigmaIntro")
+
+    if OldGui then
+        OldGui:Destroy()
+    end
+
+    local Gui = Instance.new("ScreenGui")
+
+    Gui.Name = "KatanaSigmaIntro"
+    Gui.IgnoreGuiInset = true
+    Gui.ResetOnSpawn = false
+    Gui.Parent = PlayerGui
+
+    CurrentGui = Gui
+
+    local Text = Instance.new("TextLabel")
+
+    Text.Name = "SigmaText"
+    Text.AnchorPoint = Vector2.new(0.5, 0.5)
+    Text.Position = UDim2.new(0.5, 0, 0.82, 0)
+    Text.Size = UDim2.new(0.9, 0, 0, 70)
+
+    Text.BackgroundTransparency = 1
+
+    Text.Text =
+        ":> here the Katana electron get sigma god"
+
+    Text.TextColor3 = CYAN2
+    Text.TextStrokeColor3 = Color3.fromRGB(0, 40, 60)
+    Text.TextStrokeTransparency = 0.15
+
+    Text.Font = Enum.Font.GothamBold
+    Text.TextScaled = true
+    Text.TextTransparency = 1
+
+    Text.Parent = Gui
+
+    --==================================================
+    -- CAMERA
+    --==================================================
+
+    OriginalCameraType = Camera.CameraType
+    OriginalCameraSubject = Camera.CameraSubject
+    OriginalCFrame = Camera.CFrame
+
+    -- Lấy vị trí Katana
+    local KatanaCF
+
+    if Katana:IsA("Model") then
+
+        KatanaCF = Katana:GetPivot()
+
+    elseif Katana:IsA("BasePart") then
+
+        KatanaCF = Katana.CFrame
+
+    else
+
+        KatanaCF = KatanaBlade.CFrame
+    end
+
+    local KatanaPosition = KatanaCF.Position
+
+    local CameraPosition =
+        KatanaPosition
+        + KatanaCF.LookVector * 7
+        + Vector3.new(0, 2.5, 0)
+
+    local TargetPosition =
+        KatanaPosition
+        + Vector3.new(0, 0.5, 0)
+
+    local CinematicCFrame =
+        CFrame.lookAt(
+            CameraPosition,
+            TargetPosition
+        )
+
+    CinematicRunning = true
+
+    Camera.CameraType = Enum.CameraType.Scriptable
+
+    --==================================================
+    -- CAMERA TWEEN
+    --==================================================
+
+    local CameraTween = TweenService:Create(
+        Camera,
+        TweenInfo.new(
+            1.2,
+            Enum.EasingStyle.Quad,
+            Enum.EasingDirection.Out
+        ),
+        {
+            CFrame = CinematicCFrame
+        }
+    )
+
+    CameraTween:Play()
+
+    --==================================================
+    -- TEXT
+    --==================================================
+
+    task.delay(0.7, function()
+
+        if not Enabled or not CinematicRunning then
+            return
+        end
+
+        if Text and Text.Parent then
+
+            TweenService:Create(
+                Text,
+                TweenInfo.new(0.5),
+                {
+                    TextTransparency = 0
+                }
+            ):Play()
+
+        end
+    end)
+
+    --==================================================
+    -- RETURN CAMERA
+    --==================================================
+
+    task.delay(6, function()
+
+        if not Enabled or not CinematicRunning then
+            return
+        end
+
+        CinematicRunning = false
+
+        -- Text biến mất
+        if Text and Text.Parent then
+
+            local TextTween = TweenService:Create(
+                Text,
+                TweenInfo.new(0.4),
+                {
+                    TextTransparency = 1
+                }
+            )
+
+            TextTween:Play()
+        end
+
+        -- Camera quay về
+        if Camera and OriginalCFrame then
+
+            local ReturnTween = TweenService:Create(
+                Camera,
+                TweenInfo.new(
+                    1,
+                    Enum.EasingStyle.Quad,
+                    Enum.EasingDirection.InOut
+                ),
+                {
+                    CFrame = OriginalCFrame
+                }
+            )
+
+            ReturnTween:Play()
+
+            ReturnTween.Completed:Wait()
+
+            if Enabled then
+
+                Camera.CameraType = OriginalCameraType
+                Camera.CameraSubject = OriginalCameraSubject
+
+            end
+        end
+
+        if Gui and Gui.Parent then
+            Gui:Destroy()
+        end
+
+        CurrentGui = nil
+
+    end)
+
+    print("====================================")
+    print("⚡ Electric Dash: LOADED")
+    print("⚡ Crucible Lightning: COPIED")
+    print("⚡ Effect #9: COPIED")
+    print("🌊 Effect Color: CYAN")
+    print("🎥 Katana Cinematic: ON")
+    print("⏱️ Camera return: 6 seconds")
+    print("====================================")
+end
+
+--==================================================
+-- ORION TOGGLE
+--==================================================
+
+Tab4:AddToggle({
+    Name = "⚡ Katana Electron [Lite]",
+    Default = true,
+    Callback = function(Value)
+
+        Enabled = Value
+
+        if Value then
+
+            print("⚡ Katana Electron: ON")
+
+            -- Load Dash
+            task.spawn(function()
+                LoadElectricDash()
+            end)
+
+            -- Chạy effect + cinematic
+            task.spawn(function()
+                StartKatana()
+            end)
+
+        else
+
+            print("⚡ Katana Electron: OFF")
+
+            Cleanup()
+
+        end
+    end
+})
+
+--==================================================
+-- OPEN SẴN
+--==================================================
+
+OrionLib:Init()
+
+-- ÉP TOGGLE CHẠY NGAY KHI LOAD
+task.spawn(function()
+
+    task.wait(0.5)
+
+    Enabled = true
+
+    LoadElectricDash()
+    StartKatana()
+
+end)
                 
