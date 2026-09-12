@@ -2300,3 +2300,88 @@ Corner2.Parent = Image
 Toggle.MouseButton1Click:Connect(function()
   OrionLib:ToggleUi()
 end)
+
+
+local Section = Tab4:AddSection({
+    Name = "Story:Have 1 electron infection all weapon 😂😂 Owner[LOVEVNVRM5]"
+})
+
+--// 1. KATANA
+Tab4:AddToggle({
+    Name = "katanainfec Electron",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            task.spawn(function()
+                local success, err = pcall(function()
+                    loadstring(game:HttpGet(
+                        "https://raw.githubusercontent.com/Dreamer987/Katanain/refs/heads/main/Jiu"
+                    ))()
+                end)
+
+                if not success then
+                    OrionLib:MakeNotification({
+                        Name = "Katanain Error",
+                        Content = tostring(err),
+                        Image = "rbxassetid://4483345998",
+                        Time = 5
+                    })
+                end
+            end)
+        end
+    end
+})
+
+--// 2. CRUCIBLE
+Tab4:AddToggle({
+    Name = "crucible electron",
+    Default = true,
+    Callback = function(Value)
+        if Value then
+            task.spawn(function()
+                local success, err = pcall(function()
+                    loadstring(game:HttpGet(
+                        "https://raw.githubusercontent.com/Dreamer987/Cruci/refs/heads/main/Huhu"
+                    ))()
+                end)
+
+                if not success then
+                    OrionLib:MakeNotification({
+                        Name = "Crucible Error",
+                        Content = tostring(err),
+                        Image = "rbxassetid://4483345998",
+                        Time = 5
+                    })
+                end
+            end)
+        end
+    end
+})
+
+--// 3. ENERGY SWORD
+Tab4:AddToggle({
+    Name = "enenry sword neutrion :]",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            task.spawn(function()
+                local success, err = pcall(function()
+                    loadstring(game:HttpGet(
+                        "https://raw.githubusercontent.com/Dreamer987/Ene/refs/heads/main/Uehe"
+                    ))()
+                end)
+
+                if not success then
+                    OrionLib:MakeNotification({
+                        Name = "Energy Sword Error",
+                        Content = tostring(err),
+                        Image = "rbxassetid://4483345998",
+                        Time = 5
+                    })
+                end
+            end)
+        end
+    end
+})
+
+OrionLib:Init()
