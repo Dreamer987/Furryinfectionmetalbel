@@ -1815,27 +1815,7 @@ local Camera = workspace.CurrentCamera
 -- ORION
 --==================================================
 
-local OrionLib = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/jensonhirst/Orion/main/source"
-))()
 
-local Window = OrionLib:MakeWindow({
-    Name = "⚡ Katana Electron Sigma",
-    HidePremium = false,
-    SaveConfig = true,
-    ConfigFolder = "KatanaElectronSigma",
-    IntroEnabled = false
-})
-
-local Tab = Window:MakeTab({
-    Name = "Katana",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-
-local Section = Tab:AddSection({
-    Name = "⚡ Katana Effect"
-})
 
 --==================================================
 -- LOAD ELECTRIC DASH
