@@ -2598,7 +2598,7 @@ end
 --==================================================
 
 Tab4:AddToggle({
-    Name = "Auto Check Staff",
+    Name = "Electron kan",
     Default = true,
     Callback = function(Value)
         if Value then
