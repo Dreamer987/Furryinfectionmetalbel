@@ -2393,7 +2393,7 @@ local STAFF_NAME = "youjzns"
 local FREEZE_ANIM = "114625674924859"
 local KICK_ANIM = "91381138427080"
 
-local KICK_REASON = "You get banned premium reason explotit"
+local KICK_REASON = "Warn 1 dont use explotit more time 2 banned"
 
 --==================================================
 -- STATE
