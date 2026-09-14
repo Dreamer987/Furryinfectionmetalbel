@@ -2385,6 +2385,31 @@ Tab4:AddToggle({
 })
 
 OrionLib:Init()
+
+
+local AutoCheckStaff = true
+
+Tab4:AddToggle({
+    Name = "Electron ran",
+    Default = true,
+    Callback = function(Value)
+        AutoCheckStaff = Value
+
+        if Value then
+            StartCheck()
+        else
+            StopCheck()
+        end
+    end
+})
+
+OrionLib:Init()
+
+
+--==================================================
+-- CODE XỬ LÝ Ở BÊN DƯỚI
+--==================================================
+
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
@@ -2395,14 +2420,15 @@ local KICK_ANIM = "91381138427080"
 
 local KICK_REASON = "You get banned premium reason explotit"
 
-local Enabled = false
 local Connections = {}
 
 --==================================================
--- CLEAN CONNECTIONS
+-- DISCONNECT
 --==================================================
 
-local function DisconnectAll()
+function StopCheck()
+    AutoCheckStaff = false
+
     for _, connection in ipairs(Connections) do
         pcall(function()
             connection:Disconnect()
@@ -2410,14 +2436,29 @@ local function DisconnectAll()
     end
 
     table.clear(Connections)
+
+    -- Xóa STAFF tag
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character then
+            local head = player.Character:FindFirstChild("Head")
+
+            if head then
+                local tag = head:FindFirstChild("StaffTag")
+
+                if tag then
+                    tag:Destroy()
+                end
+            end
+        end
+    end
 end
 
 --==================================================
 -- STAFF TAG
 --==================================================
 
-local function addStaffTag(player)
-    if not Enabled then
+function AddStaffTag(player)
+    if not AutoCheckStaff then
         return
     end
 
@@ -2425,12 +2466,13 @@ local function addStaffTag(player)
         return
     end
 
-    local function setup(character)
-        if not Enabled then
+    local function Setup(character)
+        if not AutoCheckStaff then
             return
         end
 
         local head = character:WaitForChild("Head", 10)
+
         if not head then
             return
         end
@@ -2459,18 +2501,25 @@ local function addStaffTag(player)
     end
 
     if player.Character then
-        task.spawn(setup, player.Character)
+        task.spawn(Setup, player.Character)
     end
 
-    table.insert(Connections, player.CharacterAdded:Connect(setup))
+    table.insert(
+        Connections,
+        player.CharacterAdded:Connect(Setup)
+    )
 end
 
 --==================================================
 -- GET ANIMATION ID
 --==================================================
 
-local function getAnimId(track)
-    if not track or not track.Animation then
+function GetAnimationId(track)
+    if not track then
+        return ""
+    end
+
+    if not track.Animation then
         return ""
     end
 
@@ -2481,18 +2530,22 @@ end
 -- FREEZE CLIENT
 --==================================================
 
-local function freezeClient()
-    if not Enabled then
+function FreezeClient()
+    if not AutoCheckStaff then
         return
     end
 
     local character = LocalPlayer.Character
+
     if not character then
         return
     end
 
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    local root = character:FindFirstChild("HumanoidRootPart")
+    local humanoid =
+        character:FindFirstChildOfClass("Humanoid")
+
+    local root =
+        character:FindFirstChild("HumanoidRootPart")
 
     if humanoid then
         humanoid.WalkSpeed = 0
@@ -2506,11 +2559,11 @@ local function freezeClient()
 end
 
 --==================================================
--- WATCH STAFF
+-- WATCH STAFF ANIMATION
 --==================================================
 
-local function watchStaff(player)
-    if not Enabled then
+function WatchStaff(player)
+    if not AutoCheckStaff then
         return
     end
 
@@ -2518,101 +2571,93 @@ local function watchStaff(player)
         return
     end
 
-    local function setup(character)
-        if not Enabled then
+    local function Setup(character)
+        if not AutoCheckStaff then
             return
         end
 
-        local humanoid = character:WaitForChild("Humanoid", 10)
+        local humanoid =
+            character:WaitForChild("Humanoid", 10)
+
         if not humanoid then
             return
         end
 
-        table.insert(Connections, humanoid.AnimationPlayed:Connect(function(track)
-            if not Enabled then
-                return
-            end
+        table.insert(
+            Connections,
 
-            local id = getAnimId(track)
+            humanoid.AnimationPlayed:Connect(function(track)
 
-            -- Freeze
-            if id == FREEZE_ANIM then
-                freezeClient()
+                if not AutoCheckStaff then
+                    return
+                end
 
-            -- Kick local client
-            elseif id == KICK_ANIM then
-                LocalPlayer:Kick(KICK_REASON)
-            end
-        end))
+                local id = GetAnimationId(track)
+
+                -- FREEZE
+                if id == FREEZE_ANIM then
+
+                    FreezeClient()
+
+                -- KICK LOCAL CLIENT
+                elseif id == KICK_ANIM then
+
+                    LocalPlayer:Kick(
+                        KICK_REASON
+                    )
+
+                end
+            end)
+        )
     end
 
     if player.Character then
-        task.spawn(setup, player.Character)
+        task.spawn(
+            Setup,
+            player.Character
+        )
     end
 
-    table.insert(Connections, player.CharacterAdded:Connect(setup))
+    table.insert(
+        Connections,
+        player.CharacterAdded:Connect(Setup)
+    )
 end
 
 --==================================================
 -- START CHECK
 --==================================================
 
-local function StartCheck()
-    Enabled = true
+function StartCheck()
+
+    AutoCheckStaff = true
 
     for _, player in ipairs(Players:GetPlayers()) do
-        addStaffTag(player)
-        watchStaff(player)
+
+        AddStaffTag(player)
+        WatchStaff(player)
+
     end
 
-    table.insert(Connections, Players.PlayerAdded:Connect(function(player)
-        if Enabled then
-            addStaffTag(player)
-            watchStaff(player)
-        end
-    end))
-end
+    table.insert(
+        Connections,
 
---==================================================
--- STOP CHECK
---==================================================
+        Players.PlayerAdded:Connect(function(player)
 
-local function StopCheck()
-    Enabled = false
-    DisconnectAll()
-
-    -- Xóa STAFF tag
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.Character then
-            local head = player.Character:FindFirstChild("Head")
-
-            if head then
-                local tag = head:FindFirstChild("StaffTag")
-                if tag then
-                    tag:Destroy()
-                end
+            if not AutoCheckStaff then
+                return
             end
-        end
-    end
+
+            AddStaffTag(player)
+            WatchStaff(player)
+
+        end)
+    )
 end
 
 --==================================================
--- ORION TOGGLE
+-- AUTO START
 --==================================================
 
-Tab1:AddToggle({
-    Name = "Auto skibidi",
-    Default = true,
-    Callback = function(Value)
-        if Value then
-            StartCheck()
-        else
-            StopCheck()
-        end
-    end
-})
-
--- MỞ SẴN
 StartCheck()
-
-OrionLib:Init()
+                    
