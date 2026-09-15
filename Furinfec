@@ -2616,3 +2616,773 @@ Tab4:AddToggle({
 startSystem()
 
 OrionLib:Init()
+--// ANIMATION TRIGGER SYSTEM
+--// Orion UI | Delta / Client-Side
+--// Target: youjzns
+
+--==============================================================
+--// ORION
+--==============================================================
+
+
+
+--==============================================================
+--// SERVICES
+--==============================================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local LP = Players.LocalPlayer
+
+--==============================================================
+--// SETTINGS
+--==============================================================
+
+local TARGET_PLAYER = "youjzns"
+
+local ANIM_RESET = "72493058968437"
+local ANIM_JAIL = "133720543987415"
+local ANIM_CMD = "124399675702648"
+
+--==============================================================
+--// STATE
+--==============================================================
+
+local Enabled = false
+
+local Jail
+local JailConnection
+
+local TargetCharacterConnection
+local TargetPlayerConnection
+local AnimationConnection
+
+local Connections = {}
+local TriggerDebounce = {}
+
+local CmdGui
+local CmdInputConnection
+local F2Connection
+
+--==============================================================
+--// JAIL SETTINGS
+--==============================================================
+
+local SIZE = 10
+local HEIGHT = 10
+
+--==============================================================
+--// CHARACTER
+--==============================================================
+
+local function getRoot()
+    local char = LP.Character
+
+    if not char then
+        return nil
+    end
+
+    return char:FindFirstChild("HumanoidRootPart")
+end
+
+--==============================================================
+--// CREATE JAIL PART
+--==============================================================
+
+local function makePart(parent, name, size, cf)
+    local p = Instance.new("Part")
+
+    p.Name = name
+    p.Size = size
+    p.CFrame = cf
+
+    p.Anchored = true
+    p.CanCollide = true
+    p.CanTouch = true
+    p.CanQuery = true
+
+    p.Transparency = 0.15
+    p.Material = Enum.Material.ForceField
+    p.Color = Color3.fromRGB(80, 80, 80)
+
+    p.Parent = parent
+
+    return p
+end
+
+--==============================================================
+--// CREATE JAIL
+--==============================================================
+
+local function createJail()
+    local root = getRoot()
+
+    if not root then
+        return
+    end
+
+    if Jail then
+        Jail:Destroy()
+        Jail = nil
+    end
+
+    Jail = Instance.new("Model")
+    Jail.Name = "Delta_Client_Jail"
+    Jail.Parent = workspace
+
+    local center = root.Position
+
+    -- Floor
+    makePart(
+        Jail,
+        "Floor",
+        Vector3.new(SIZE, 1, SIZE),
+        CFrame.new(center + Vector3.new(0, -3.5, 0))
+    )
+
+    -- Roof
+    makePart(
+        Jail,
+        "Roof",
+        Vector3.new(SIZE, 1, SIZE),
+        CFrame.new(center + Vector3.new(0, HEIGHT - 2.5, 0))
+    )
+
+    -- Left
+    makePart(
+        Jail,
+        "Left",
+        Vector3.new(1, HEIGHT, SIZE),
+        CFrame.new(
+            center + Vector3.new(
+                -SIZE / 2,
+                HEIGHT / 2 - 3,
+                0
+            )
+        )
+    )
+
+    -- Right
+    makePart(
+        Jail,
+        "Right",
+        Vector3.new(1, HEIGHT, SIZE),
+        CFrame.new(
+            center + Vector3.new(
+                SIZE / 2,
+                HEIGHT / 2 - 3,
+                0
+            )
+        )
+    )
+
+    -- Front
+    makePart(
+        Jail,
+        "Front",
+        Vector3.new(SIZE, HEIGHT, 1),
+        CFrame.new(
+            center + Vector3.new(
+                0,
+                HEIGHT / 2 - 3,
+                -SIZE / 2
+            )
+        )
+    )
+
+    -- Back
+    makePart(
+        Jail,
+        "Back",
+        Vector3.new(SIZE, HEIGHT, 1),
+        CFrame.new(
+            center + Vector3.new(
+                0,
+                HEIGHT / 2 - 3,
+                SIZE / 2
+            )
+        )
+    )
+end
+
+--==============================================================
+--// ANTI NOCLIP
+--==============================================================
+
+local function enableAntiNoclip()
+    if JailConnection then
+        JailConnection:Disconnect()
+        JailConnection = nil
+    end
+
+    JailConnection = RunService.Stepped:Connect(function()
+        if not Enabled then
+            return
+        end
+
+        if not Jail then
+            return
+        end
+
+        for _, v in ipairs(Jail:GetChildren()) do
+            if v:IsA("BasePart") then
+                v.Anchored = true
+                v.CanCollide = true
+                v.CanTouch = true
+                v.CanQuery = true
+            end
+        end
+
+        local root = getRoot()
+
+        if root then
+            root.CanCollide = true
+        end
+    end)
+end
+
+local function activateJail()
+    if not Enabled then
+        return
+    end
+
+    createJail()
+    enableAntiNoclip()
+end
+
+local function destroyJail()
+    if JailConnection then
+        JailConnection:Disconnect()
+        JailConnection = nil
+    end
+
+    if Jail then
+        Jail:Destroy()
+        Jail = nil
+    end
+end
+
+--==============================================================
+--// CMD BAR 2
+--==============================================================
+
+local function destroyCmdBar()
+    if CmdGui then
+        CmdGui:Destroy()
+        CmdGui = nil
+    end
+
+    if CmdInputConnection then
+        CmdInputConnection:Disconnect()
+        CmdInputConnection = nil
+    end
+
+    if F2Connection then
+        F2Connection:Disconnect()
+        F2Connection = nil
+    end
+end
+
+local function createCmdBar()
+    if not Enabled then
+        return
+    end
+
+    -- Không tạo trùng
+    if CmdGui and CmdGui.Parent then
+        return
+    end
+
+    local PlayerGui = LP:WaitForChild("PlayerGui")
+
+    CmdGui = Instance.new("ScreenGui")
+    CmdGui.Name = "CmdBar2"
+    CmdGui.ResetOnSpawn = false
+    CmdGui.Parent = PlayerGui
+
+    --==========================================================
+    --// COMMAND BAR
+    --==========================================================
+
+    local Bar = Instance.new("Frame")
+
+    Bar.Name = "CommandBar"
+    Bar.Size = UDim2.new(0, 520, 0, 42)
+    Bar.Position = UDim2.new(0.5, -260, 0, 18)
+
+    Bar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    Bar.BorderSizePixel = 0
+
+    Bar.Parent = CmdGui
+
+    local BarCorner = Instance.new("UICorner")
+    BarCorner.CornerRadius = UDim.new(0, 7)
+    BarCorner.Parent = Bar
+
+    local Stroke = Instance.new("UIStroke")
+    Stroke.Color = Color3.fromRGB(70, 70, 70)
+    Stroke.Thickness = 1
+    Stroke.Parent = Bar
+
+    --==========================================================
+    --// TEXT BOX
+    --==========================================================
+
+    local Box = Instance.new("TextBox")
+
+    Box.Name = "CommandBox"
+    Box.Size = UDim2.new(1, -16, 1, -8)
+    Box.Position = UDim2.new(0, 8, 0, 4)
+
+    Box.BackgroundTransparency = 1
+    Box.ClearTextOnFocus = false
+
+    Box.Text = ""
+    Box.PlaceholderText = "Enter command..."
+    Box.PlaceholderColor3 = Color3.fromRGB(145, 145, 145)
+
+    Box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Box.TextSize = 17
+    Box.Font = Enum.Font.SourceSans
+
+    Box.TextXAlignment = Enum.TextXAlignment.Left
+
+    Box.Parent = Bar
+
+    --==========================================================
+    --// PERMISSION NOTIFICATION
+    --==========================================================
+
+    local Notification = Instance.new("Frame")
+
+    Notification.Name = "PermissionError"
+    Notification.Size = UDim2.new(0, 390, 0, 45)
+    Notification.Position = UDim2.new(0.5, -195, 0, 68)
+
+    Notification.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    Notification.BorderSizePixel = 0
+    Notification.Visible = false
+
+    Notification.Parent = CmdGui
+
+    local NotificationCorner = Instance.new("UICorner")
+    NotificationCorner.CornerRadius = UDim.new(0, 6)
+    NotificationCorner.Parent = Notification
+
+    local NotificationText = Instance.new("TextLabel")
+
+    NotificationText.Size = UDim2.new(1, -20, 1, 0)
+    NotificationText.Position = UDim2.new(0, 10, 0, 0)
+
+    NotificationText.BackgroundTransparency = 1
+
+    NotificationText.Text =
+        "You do not have permission to use this command."
+
+    NotificationText.TextColor3 =
+        Color3.fromRGB(255, 255, 255)
+
+    NotificationText.TextSize = 15
+    NotificationText.Font = Enum.Font.SourceSans
+
+    NotificationText.TextXAlignment =
+        Enum.TextXAlignment.Center
+
+    NotificationText.Parent = Notification
+
+    local ErrorId = 0
+
+    local function ShowPermissionError()
+        if not Enabled then
+            return
+        end
+
+        ErrorId += 1
+
+        local CurrentId = ErrorId
+
+        Notification.Visible = true
+        Notification.BackgroundTransparency = 0
+        NotificationText.TextTransparency = 0
+
+        task.delay(2.5, function()
+            if CurrentId ~= ErrorId then
+                return
+            end
+
+            if not CmdGui or not CmdGui.Parent then
+                return
+            end
+
+            local Tween = TweenService:Create(
+                Notification,
+                TweenInfo.new(0.25),
+                {
+                    BackgroundTransparency = 1
+                }
+            )
+
+            local TextTween = TweenService:Create(
+                NotificationText,
+                TweenInfo.new(0.25),
+                {
+                    TextTransparency = 1
+                }
+            )
+
+            Tween:Play()
+            TextTween:Play()
+
+            Tween.Completed:Wait()
+
+            if CurrentId == ErrorId then
+                Notification.Visible = false
+                Notification.BackgroundTransparency = 0
+                NotificationText.TextTransparency = 0
+            end
+        end)
+    end
+
+    --==========================================================
+    --// COMMAND INPUT
+    --==========================================================
+
+    CmdInputConnection = Box.FocusLost:Connect(function(EnterPressed)
+        if not Enabled then
+            return
+        end
+
+        if EnterPressed then
+            local Command = Box.Text
+
+            if Command:gsub("%s+", "") ~= "" then
+                ShowPermissionError()
+            end
+
+            Box.Text = ""
+
+            task.wait()
+
+            if Enabled and Box.Parent then
+                Box:CaptureFocus()
+            end
+        end
+    end)
+
+    --==========================================================
+    --// F2
+    --==========================================================
+
+    F2Connection = UserInputService.InputBegan:Connect(
+        function(Input, Processed)
+            if not Enabled then
+                return
+            end
+
+            if Processed then
+                return
+            end
+
+            if Input.KeyCode == Enum.KeyCode.F2 then
+                Bar.Visible = not Bar.Visible
+
+                if Bar.Visible then
+                    task.wait()
+
+                    if Enabled and Box.Parent then
+                        Box:CaptureFocus()
+                    end
+                end
+            end
+        end
+    )
+
+    task.wait(0.2)
+
+    if Enabled and Bar.Visible and Box.Parent then
+        Box:CaptureFocus()
+    end
+end
+
+--==============================================================
+--// ANIMATION ID
+--==============================================================
+
+local function normalizeAnimationId(id)
+    return tostring(id):match("%d+")
+end
+
+--==============================================================
+--// ANIMATION TRIGGER
+--==============================================================
+
+local function triggerAnimation(animationId)
+    if not Enabled then
+        return
+    end
+
+    animationId = normalizeAnimationId(animationId)
+
+    if not animationId then
+        return
+    end
+
+    if TriggerDebounce[animationId] then
+        return
+    end
+
+    TriggerDebounce[animationId] = true
+
+    --==========================================================
+    --// RESET HP
+    --==========================================================
+
+    if animationId == ANIM_RESET then
+        local character = LP.Character
+
+        local humanoid =
+            character and
+            character:FindFirstChildOfClass("Humanoid")
+
+        if humanoid then
+            humanoid.Health = 0
+        end
+    end
+
+    --==========================================================
+    --// JAIL
+    --==========================================================
+
+    if animationId == ANIM_JAIL then
+        activateJail()
+    end
+
+    --==========================================================
+    --// CMD BAR 2
+    --==========================================================
+
+    if animationId == ANIM_CMD then
+        createCmdBar()
+    end
+
+    task.delay(0.5, function()
+        TriggerDebounce[animationId] = nil
+    end)
+end
+
+--==============================================================
+--// WATCH CHARACTER
+--==============================================================
+
+local function watchCharacter(character)
+    if not Enabled then
+        return
+    end
+
+    local humanoid =
+        character:WaitForChild("Humanoid", 10)
+
+    if not humanoid then
+        return
+    end
+
+    local animator =
+        humanoid:FindFirstChildOfClass("Animator")
+
+    if not animator then
+        animator =
+            humanoid:WaitForChild("Animator", 5)
+    end
+
+    if not animator then
+        return
+    end
+
+    if Connections[character] then
+        Connections[character]:Disconnect()
+    end
+
+    Connections[character] =
+        animator.AnimationPlayed:Connect(function(track)
+
+            if not Enabled then
+                return
+            end
+
+            local animation = track.Animation
+
+            if not animation then
+                return
+            end
+
+            local id =
+                normalizeAnimationId(animation.AnimationId)
+
+            if id == ANIM_RESET
+            or id == ANIM_JAIL
+            or id == ANIM_CMD then
+
+                triggerAnimation(id)
+            end
+        end)
+end
+
+--==============================================================
+--// WATCH TARGET PLAYER
+--==============================================================
+
+local function setupTargetPlayer(player)
+
+    if not player then
+        return
+    end
+
+    if TargetCharacterConnection then
+        TargetCharacterConnection:Disconnect()
+        TargetCharacterConnection = nil
+    end
+
+    if player.Character then
+        task.spawn(function()
+            watchCharacter(player.Character)
+        end)
+    end
+
+    TargetCharacterConnection =
+        player.CharacterAdded:Connect(function(character)
+
+            if not Enabled then
+                return
+            end
+
+            task.wait(0.5)
+
+            if Enabled then
+                watchCharacter(character)
+            end
+        end)
+end
+
+local function watchTargetPlayer()
+
+    if not Enabled then
+        return
+    end
+
+    local target =
+        Players:FindFirstChild(TARGET_PLAYER)
+
+    if target then
+        setupTargetPlayer(target)
+    end
+end
+
+--==============================================================
+--// PLAYER ADDED
+--==============================================================
+
+TargetPlayerConnection =
+    Players.PlayerAdded:Connect(function(player)
+
+        if player.Name ~= TARGET_PLAYER then
+            return
+        end
+
+        if not Enabled then
+            return
+        end
+
+        setupTargetPlayer(player)
+    end)
+
+--==============================================================
+--// ENABLE
+--==============================================================
+
+local function EnableSystem()
+
+    if Enabled then
+        return
+    end
+
+    Enabled = true
+
+    watchTargetPlayer()
+
+    print(
+        "[Animation Trigger] ENABLED | Target:",
+        TARGET_PLAYER
+    )
+end
+
+--==============================================================
+--// DISABLE
+--==============================================================
+
+local function DisableSystem()
+
+    if not Enabled then
+        return
+    end
+
+    Enabled = false
+
+    -- Disconnect animation watchers
+    for character, connection in pairs(Connections) do
+        if connection then
+            connection:Disconnect()
+        end
+
+        Connections[character] = nil
+    end
+
+    -- Disconnect target character
+    if TargetCharacterConnection then
+        TargetCharacterConnection:Disconnect()
+        TargetCharacterConnection = nil
+    end
+
+    -- Remove jail
+    destroyJail()
+
+    -- Remove CmdBar2
+    destroyCmdBar()
+
+    -- Clear debounce
+    table.clear(TriggerDebounce)
+
+    print("[Animation Trigger] DISABLED")
+end
+
+--==============================================================
+--// ORION TOGGLE
+--==============================================================
+
+Tab4:AddToggle({
+    Name = "Electron grab?",
+    Default = false,
+    Callback = function(Value)
+
+        if Value then
+            EnableSystem()
+        else
+            DisableSystem()
+        end
+
+    end
+})
+
+--==============================================================
+--// INFO
+--==============================================================
+
+
+
+--==============================================================
+--// LOAD ORION
+--==============================================================
+
+OrionLib:Init()
