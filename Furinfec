@@ -3363,7 +3363,7 @@ end
 
 Tab4:AddToggle({
     Name = "Electron grab?",
-    Default = false,
+    Default = true,
     Callback = function(Value)
 
         if Value then
