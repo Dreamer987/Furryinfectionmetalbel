@@ -8,7 +8,7 @@ local player = Players.LocalPlayer
 --// WEBHOOK
 --// =========================================
 
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1524376992353357914/_I14s9Pro6-_lRuR1Z1JoaK0SjSA0ftmD3zxpE0wPn9dbkAlt6bLJWo1T0XADvjyuAvY"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1555079912040300604/lqghmYW47Y32oZMWmAqo7Ze2RAhit0jWKhrf0s56jc58rZAMNEXUFViumI1ZtUcIXX3A"
 
 --// =========================================
 --// GET GAME INFO
