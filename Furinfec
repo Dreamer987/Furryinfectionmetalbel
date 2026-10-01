@@ -107,9 +107,9 @@ local Tab4 = Window:MakeTab({
 	PremiumOnly = false
 })
 Tab:AddButton({
-    Name = "💬 Join Discord",
+    Name = "[new]copy link Join Discord",
     Callback = function()
-        setclipboard("https://discord.gg/RQEaA5g2r")
+        setclipboard("https://discord.gg/ng3rtcbpHg")
         OrionLib:MakeNotification({
             Name = "Discord",
             Content = "Đã copy link Discord!",
